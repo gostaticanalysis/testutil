@@ -12,8 +12,8 @@ func (f ErrorfFunc) Errorf(format string, args ...interface{}) {
 	f(format, args...)
 }
 
-// WithFilter calls t.Errorf when the filter returns true.
-func WithFilter(t analysistest.Testing, filter func(format string, args ...interface{}) bool) analysistest.Testing {
+// Filter calls t.Errorf when the filter returns true.
+func Filter(t analysistest.Testing, filter func(format string, args ...interface{}) bool) analysistest.Testing {
 	return ErrorfFunc(func(format string, args ...interface{}) {
 		if filter(format, args...) {
 			t.Errorf(format, args...)
