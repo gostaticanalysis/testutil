@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -38,13 +39,40 @@ func WithModules(t *testing.T, baseDir string, modfileReader io.Reader) (dir str
 		}
 	}
 
-	cmd := exec.Command("go", "mod", "vendor")
-	cmd.Stdout = ioutil.Discard
-	var errBuf bytes.Buffer
-	cmd.Stderr = &errBuf
-	cmd.Dir = dir
-	if err := cmd.Run(); err != nil {
-		t.Fatal("go mod vendor:", err, "\n", errBuf.String())
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			return nil
+		}
+
+		files, err := ioutil.ReadDir(path)
+		if err != nil {
+			return err
+		}
+
+		for _, file := range files {
+			if file.Name() != "go.mod" {
+				continue
+			}
+
+			cmd := exec.Command("go", "mod", "vendor")
+			cmd.Stdout = ioutil.Discard
+			var errBuf bytes.Buffer
+			cmd.Stderr = &errBuf
+			cmd.Dir = path
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("%w: %s", err, &errBuf)
+			}
+			break
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal("go mod vendor:", err)
 	}
 
 	return dir
