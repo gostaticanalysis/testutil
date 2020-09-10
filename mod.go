@@ -3,8 +3,6 @@ package testutil
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -13,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
+	"github.com/tenntenn/modver"
 	tnntransform "github.com/tenntenn/text/transform"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/text/transform"
@@ -119,34 +117,14 @@ func ModFile(t *testing.T, path string, fix modfile.VersionFixer) io.Reader {
 }
 
 // ModuleVersion has module path and its version.
-type ModuleVersion struct {
-	Module  string
-	Version string
-}
-
-// String implements fmt.Stringer.
-func (modver ModuleVersion) String() string {
-	return fmt.Sprintf("%s@%s", modver.Module, modver.Version)
-}
+type ModuleVersion = modver.ModuleVersion
 
 // AllVersion get available all versions of the module.
 func AllVersion(t *testing.T, module string) []ModuleVersion {
 	t.Helper()
-
-	dir := t.TempDir()
-	execCmd(t, dir, "go", "mod", "init", "tmp")
-	r := execCmd(t, dir, "go", "list", "-m", "-versions", "-json", module)
-	var v struct{ Versions []string }
-	if err := json.NewDecoder(r).Decode(&v); err != nil {
-		t.Fatal("cannot decode JSON", err)
-	}
-
-	vers := make([]ModuleVersion, len(v.Versions))
-	for i := range v.Versions {
-		vers[i] = ModuleVersion{
-			Module:  module,
-			Version: v.Versions[i],
-		}
+	vers, err := modver.AllVersion(module)
+	if err != nil {
+		t.Fatal("unexpected error", err)
 	}
 
 	return vers
@@ -158,27 +136,30 @@ func AllVersion(t *testing.T, module string) []ModuleVersion {
 // Example:
 //	func TestAnalyzer(t *testing.T) {
 //		vers := FilterVersion(t, "github.com/tenntenn/greeting/v2", ">= v2.0.0")
-//		RunWithVersions(t, analysistest.TestData(), mod.Analyzer, vers, "a")
+//		RunWithVersions(t, analysistest.TestData(), sample.Analyzer, vers, "a")
 //	}
 func FilterVersion(t *testing.T, module, constraints string) []ModuleVersion {
 	t.Helper()
-
-	c, err := version.NewConstraint(constraints)
+	vers, err := modver.FilterVersion(module, constraints)
 	if err != nil {
-		t.Fatal("cannot parse constraints", err)
+		t.Fatal("unexpected error", err)
 	}
+	return vers
+}
 
-	var vers []ModuleVersion
-	for _, ver := range AllVersion(t, module) {
-		v, err := version.NewVersion(ver.Version)
-		if err != nil {
-			t.Fatal("cannot parse version", err)
-		}
-		if c.Check(v) {
-			vers = append(vers, ver)
-		}
+// LatestVersion returns most latest versions (<= max) of each minner version.
+//
+// Example:
+//	func TestAnalyzer(t *testing.T) {
+//		vers := LatestVersion(t, "github.com/tenntenn/greeting/v2", 3)
+//		RunWithVersions(t, analysistest.TestData(), sample.Analyzer, vers, "a")
+//	}
+func LatestVersion(t *testing.T, module string, max int) []ModuleVersion {
+	t.Helper()
+	vers, err := modver.LatestVersion(module, max)
+	if err != nil {
+		t.Fatal("unexpected error", err)
 	}
-
 	return vers
 }
 
@@ -187,7 +168,7 @@ func FilterVersion(t *testing.T, module, constraints string) []ModuleVersion {
 // Example:
 //	func TestAnalyzer(t *testing.T) {
 //		vers := AllVersion(t, "github.com/tenntenn/greeting/v2")
-//		RunWithVersions(t, analysistest.TestData(), mod.Analyzer, vers, "a")
+//		RunWithVersions(t, analysistest.TestData(), sample.Analyzer, vers, "a")
 //	}
 //
 // The test run in temporary directory which is isolated the dir.
@@ -202,6 +183,7 @@ func RunWithVersions(t *testing.T, dir string, a *analysis.Analyzer, vers []Modu
 	for _, modver := range vers {
 		modver := modver
 		t.Run(modver.String(), func(t *testing.T) {
+			t.Parallel()
 			modfile := ModFile(t, path, func(module, ver string) (string, error) {
 				if modver.Module == module {
 					return modver.Version, nil
@@ -234,6 +216,8 @@ var (
 	doNotUseFilteredStderr bool
 )
 
+// ReplaceStderr sets whether RunWithVersions replace os.Stderr or not.
+// The default value is true which means that RunWithVersions replaces os.Stderr.
 func ReplaceStderr(onoff bool) {
 	stderrMutex.Lock()
 	doNotUseFilteredStderr = !onoff
