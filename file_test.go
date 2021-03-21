@@ -19,7 +19,7 @@ func TestWriteFilesFS(t *testing.T) {
 		fatal bool
 	}{
 		"single": {"-- a.txt --\nhello", false},
-		"multi": {"-- a.txt --\nhello\n-- b.txt --\ngophers", false},
+		"multi":  {"-- a.txt --\nhello\n-- b.txt --\ngophers", false},
 		"nested": {"-- a.txt --\nhello\n-- b/b.txt --\ngophers", false},
 	}
 
