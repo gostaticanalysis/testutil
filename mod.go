@@ -177,6 +177,8 @@ func LatestVersion(t *testing.T, module string, max int) []ModuleVersion {
 // Replacing os.Stderr is not thread safe.
 // If you want to turn off replacing os.Stderr, you can use ReplaceStderr(false).
 func RunWithVersions(t *testing.T, dir string, a *analysis.Analyzer, vers []ModuleVersion, pkg string) map[ModuleVersion][]*analysistest.Result {
+	t.Helper()
+
 	path := filepath.Join(dir, "src", pkg)
 
 	results := make(map[ModuleVersion][]*analysistest.Result, len(vers))
@@ -200,6 +202,7 @@ func RunWithVersions(t *testing.T, dir string, a *analysis.Analyzer, vers []Modu
 }
 
 func execCmd(t *testing.T, dir, cmd string, args ...string) io.Reader {
+	t.Helper()
 	var stdout, stderr bytes.Buffer
 	_cmd := exec.Command(cmd, args...)
 	_cmd.Stdout = &stdout
@@ -225,6 +228,8 @@ func ReplaceStderr(onoff bool) {
 }
 
 func replaceStderr(t *testing.T, old, new string) {
+	t.Helper()
+
 	stderrMutex.RLock()
 	ok := !doNotUseFilteredStderr
 	stderrMutex.RUnlock()
