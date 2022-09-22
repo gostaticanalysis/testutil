@@ -27,7 +27,7 @@ import (
 //		testdata := testutil.WithModules(t, analysistest.TestData(), nil)
 //		analysistest.Run(t, testdata, sample.Analyzer, "a")
 //	}
-func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
+func WithModules(t TestingT, srcdir string, modfile io.Reader) (dir string) {
 	t.Helper()
 	dir = t.TempDir()
 	if err := copy.Copy(srcdir, dir); err != nil {
@@ -201,7 +201,7 @@ func RunWithVersions(t *testing.T, dir string, a *analysis.Analyzer, vers []Modu
 	return results
 }
 
-func execCmd(t *testing.T, dir, cmd string, args ...string) io.Reader {
+func execCmd(t TestingT, dir, cmd string, args ...string) io.Reader {
 	t.Helper()
 	var stdout, stderr bytes.Buffer
 	_cmd := exec.Command(cmd, args...)
