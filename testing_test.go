@@ -1,16 +1,15 @@
 package testutil_test
 
-import "github.com/gostaticanalysis/testutil"
-
-type MockT struct {
-	testutil.TestingT
-	IsErr   bool
-	IsFatal bool
+type MockTestingT struct {
+	mockTestingT
 }
 
-func (t *MockT) Errorf(_ string, _ ...any) { t.IsErr = true }
-func (t *MockT) Error(_ ...any)            { t.IsErr = true }
-func (t *MockT) Fatalf(_ string, _ ...any) { t.IsFatal = true }
-func (t *MockT) Fatal(_ ...any)            { t.IsFatal = true }
-func (t *MockT) Cleanup(func())            {}
-func (t *MockT) Helper()                   {}
+func (m *MockTestingT) IsError() bool {
+	return len(m.ErrorCalls()) > 0 ||
+		len(m.ErrorfCalls()) > 0
+}
+
+func (m *MockTestingT) IsFatal() bool {
+	return len(m.FatalCalls()) > 0 ||
+		len(m.FatalfCalls()) > 0
+}

@@ -26,16 +26,16 @@ func TestWriteFilesFS(t *testing.T) {
 	for name, tt := range cases {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
-			var mt MockT
+			var mt MockTestingT
 			a := txtar.Parse([]byte(tt.files))
 			fsys := txtarfs.As(a)
 
 			dir := testutil.WriteFilesFS(&mt, fsys)
 
 			switch {
-			case tt.fatal && !mt.IsFatal:
+			case tt.fatal && !mt.IsFatal():
 				t.Fatal("expected fatal does not occur")
-			case !tt.fatal && mt.IsFatal:
+			case !tt.fatal && mt.IsFatal():
 				t.Fatal("unexpected fatal")
 			}
 
