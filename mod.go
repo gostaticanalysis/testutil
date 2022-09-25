@@ -39,7 +39,7 @@ func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader) (dir string) {
 	dir = t.TempDir()
 
 	var modRoots []string
-	err := fs.WalkDir(srcFsys, "/", func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(srcFsys, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -59,6 +59,7 @@ func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader) (dir string) {
 			d := d
 			eg.Go(func() error {
 				var src io.ReadCloser
+				srcPath := filepath.Join(path, d.Name())
 				if d.Name() == "go.mod" {
 					modRoots = append(modRoots, dstDir)
 					if modfile != nil {
@@ -67,7 +68,7 @@ func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader) (dir string) {
 				}
 
 				if src == nil {
-					src, err = srcFsys.Open(path)
+					src, err = srcFsys.Open(srcPath)
 					if err != nil {
 						return fmt.Errorf("cannot open %s: %w", path, err)
 					}
@@ -81,7 +82,7 @@ func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader) (dir string) {
 				}
 
 				if _, err := io.Copy(dst, src); err != nil {
-					return fmt.Errorf("copy %s to %s: %w", path, dstName, err)
+					return fmt.Errorf("copy %s to %s: %w", srcPath, dstName, err)
 				}
 
 				if err := dst.Close(); err != nil {
