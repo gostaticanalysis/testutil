@@ -104,6 +104,7 @@ func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader) (dir string) {
 	}
 
 	for _, dir := range modRoots {
+		execCmd(t, dir, "go", "mod", "tidy")
 		execCmd(t, dir, "go", "mod", "vendor")
 	}
 

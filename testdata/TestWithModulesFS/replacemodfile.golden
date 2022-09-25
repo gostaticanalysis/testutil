@@ -1,0 +1,242 @@
+-- a.go --
+package a
+
+import "golang.org/x/tools/txtar"
+
+func F() {
+	var _ txtar.Archive
+}
+-- go.mod --
+module replacemodfile.example.com/a
+
+go 1.19
+
+require golang.org/x/tools v0.1.0
+-- go.sum --
+github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
+golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
+golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
+golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
+golang.org/x/mod v0.3.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
+golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
+golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
+golang.org/x/net v0.0.0-20201021035429-f5854403a974/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
+golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+golang.org/x/sys v0.0.0-20190412213103-97732733099d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
+golang.org/x/text v0.3.3/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
+golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
+golang.org/x/tools v0.0.0-20191119224855-298f0cb1881e/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
+golang.org/x/tools v0.1.0 h1:po9/4sTYwZU9lPhi1tOrb4hCv3qrhiQ77LZfGa2OjwY=
+golang.org/x/tools v0.1.0/go.mod h1:xkSsbof2nBLbhDlRMhhhyNLN/zl3eTqcnHD5viDpcZ0=
+golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
+-- vendor/golang.org/x/tools/AUTHORS --
+# This source code refers to The Go Authors for copyright purposes.
+# The master list of authors is in the main Go distribution,
+# visible at http://tip.golang.org/AUTHORS.
+-- vendor/golang.org/x/tools/CONTRIBUTORS --
+# This source code was written by the Go contributors.
+# The master list of contributors is in the main Go distribution,
+# visible at http://tip.golang.org/CONTRIBUTORS.
+-- vendor/golang.org/x/tools/LICENSE --
+Copyright (c) 2009 The Go Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-- vendor/golang.org/x/tools/PATENTS --
+Additional IP Rights Grant (Patents)
+
+"This implementation" means the copyrightable works distributed by
+Google as part of the Go project.
+
+Google hereby grants to You a perpetual, worldwide, non-exclusive,
+no-charge, royalty-free, irrevocable (except as stated in this section)
+patent license to make, have made, use, offer to sell, sell, import,
+transfer and otherwise run, modify and propagate the contents of this
+implementation of Go, where such license applies only to those patent
+claims, both currently owned or controlled by Google and acquired in
+the future, licensable by Google that are necessarily infringed by this
+implementation of Go.  This grant does not include claims that would be
+infringed only as a consequence of further modification of this
+implementation.  If you or your agent or exclusive licensee institute or
+order or agree to the institution of patent litigation against any
+entity (including a cross-claim or counterclaim in a lawsuit) alleging
+that this implementation of Go or any code incorporated within this
+implementation of Go constitutes direct or contributory patent
+infringement, or inducement of patent infringement, then any patent
+rights granted to you under this License for this implementation of Go
+shall terminate as of the date such litigation is filed.
+-- vendor/golang.org/x/tools/txtar/archive.go --
+// Copyright 2018 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package txtar implements a trivial text-based file archive format.
+//
+// The goals for the format are:
+//
+//	- be trivial enough to create and edit by hand.
+//	- be able to store trees of text files describing go command test cases.
+//	- diff nicely in git history and code reviews.
+//
+// Non-goals include being a completely general archive format,
+// storing binary data, storing file modes, storing special files like
+// symbolic links, and so on.
+//
+// Txtar format
+//
+// A txtar archive is zero or more comment lines and then a sequence of file entries.
+// Each file entry begins with a file marker line of the form "-- FILENAME --"
+// and is followed by zero or more file content lines making up the file data.
+// The comment or file content ends at the next file marker line.
+// The file marker line must begin with the three-byte sequence "-- "
+// and end with the three-byte sequence " --", but the enclosed
+// file name can be surrounding by additional white space,
+// all of which is stripped.
+//
+// If the txtar file is missing a trailing newline on the final line,
+// parsers should consider a final newline to be present anyway.
+//
+// There are no possible syntax errors in a txtar archive.
+package txtar
+
+import (
+	"bytes"
+	"fmt"
+	"io/ioutil"
+	"strings"
+)
+
+// An Archive is a collection of files.
+type Archive struct {
+	Comment []byte
+	Files   []File
+}
+
+// A File is a single file in an archive.
+type File struct {
+	Name string // name of file ("foo/bar.txt")
+	Data []byte // text content of file
+}
+
+// Format returns the serialized form of an Archive.
+// It is assumed that the Archive data structure is well-formed:
+// a.Comment and all a.File[i].Data contain no file marker lines,
+// and all a.File[i].Name is non-empty.
+func Format(a *Archive) []byte {
+	var buf bytes.Buffer
+	buf.Write(fixNL(a.Comment))
+	for _, f := range a.Files {
+		fmt.Fprintf(&buf, "-- %s --\n", f.Name)
+		buf.Write(fixNL(f.Data))
+	}
+	return buf.Bytes()
+}
+
+// ParseFile parses the named file as an archive.
+func ParseFile(file string) (*Archive, error) {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	return Parse(data), nil
+}
+
+// Parse parses the serialized form of an Archive.
+// The returned Archive holds slices of data.
+func Parse(data []byte) *Archive {
+	a := new(Archive)
+	var name string
+	a.Comment, name, data = findFileMarker(data)
+	for name != "" {
+		f := File{name, nil}
+		f.Data, name, data = findFileMarker(data)
+		a.Files = append(a.Files, f)
+	}
+	return a
+}
+
+var (
+	newlineMarker = []byte("\n-- ")
+	marker        = []byte("-- ")
+	markerEnd     = []byte(" --")
+)
+
+// findFileMarker finds the next file marker in data,
+// extracts the file name, and returns the data before the marker,
+// the file name, and the data after the marker.
+// If there is no next marker, findFileMarker returns before = fixNL(data), name = "", after = nil.
+func findFileMarker(data []byte) (before []byte, name string, after []byte) {
+	var i int
+	for {
+		if name, after = isMarker(data[i:]); name != "" {
+			return data[:i], name, after
+		}
+		j := bytes.Index(data[i:], newlineMarker)
+		if j < 0 {
+			return fixNL(data), "", nil
+		}
+		i += j + 1 // positioned at start of new possible marker
+	}
+}
+
+// isMarker checks whether data begins with a file marker line.
+// If so, it returns the name from the line and the data after the line.
+// Otherwise it returns name == "" with an unspecified after.
+func isMarker(data []byte) (name string, after []byte) {
+	if !bytes.HasPrefix(data, marker) {
+		return "", nil
+	}
+	if i := bytes.IndexByte(data, '\n'); i >= 0 {
+		data, after = data[:i], data[i+1:]
+	}
+	if !bytes.HasSuffix(data, markerEnd) {
+		return "", nil
+	}
+	return strings.TrimSpace(string(data[len(marker) : len(data)-len(markerEnd)])), after
+}
+
+// If data is empty or ends in \n, fixNL returns data.
+// Otherwise fixNL returns a new slice consisting of data with a final \n added.
+func fixNL(data []byte) []byte {
+	if len(data) == 0 || data[len(data)-1] == '\n' {
+		return data
+	}
+	d := make([]byte, len(data)+1)
+	copy(d, data)
+	d[len(data)] = '\n'
+	return d
+}
+-- vendor/modules.txt --
+# golang.org/x/tools v0.1.0
+## explicit; go 1.12
+golang.org/x/tools/txtar

@@ -1,8 +1,10 @@
 package testutil_test
 
 import (
+	"bytes"
 	"flag"
 	"io"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -24,10 +26,11 @@ func TestWithModulesFS(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		modfile io.Reader
+		replaceModfile bool
 	}{
-		"normal":    {nil},
-		"vendoring": {nil},
+		"normal":         {false},
+		"vendoring":      {false},
+		"replacemodfile": {true},
 	}
 
 	testdata := filepath.Join("testdata", t.Name())
@@ -41,7 +44,17 @@ func TestWithModulesFS(t *testing.T) {
 			mt.TempDirFunc = t.TempDir
 			src := golden.Txtar(t, filepath.Join(testdata, name))
 			srcFsys := txtarfs.As(txtar.Parse([]byte(src)))
-			gotDir := testutil.WithModulesFS(&mt, srcFsys, tt.modfile)
+
+			var modfile io.Reader
+			if tt.replaceModfile {
+				mf, err := os.ReadFile(filepath.Join(testdata, name+"_go.mod"))
+				if err != nil {
+					t.Fatal("unexpected error:", err)
+				}
+				modfile = bytes.NewReader(mf)
+			}
+
+			gotDir := testutil.WithModulesFS(&mt, srcFsys, modfile)
 			if msg := mt.FatalMsg(); msg != "" {
 				t.Fatal("unexpected fatal:", msg)
 			}
