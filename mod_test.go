@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/gostaticanalysis/testutil"
@@ -69,6 +70,8 @@ func TestWithModulesFS(t *testing.T) {
 				t.Fatal("unexpected fatal:", msg)
 			}
 			got := golden.Txtar(t, gotDir)
+
+			got = strings.ReplaceAll(got, filepath.ToSlash(testdata), "/path/to/testdata")
 
 			if flagUpdate {
 				golden.Update(t, testdata, name, got)
