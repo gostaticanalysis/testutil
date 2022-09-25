@@ -29,12 +29,19 @@ import (
 //		analysistest.Run(t, testdata, sample.Analyzer, "a")
 //	}
 func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
-	return WithModulesFS(t, os.DirFS(srcdir), modfile)
+	abs := func(relPath string) string {
+		return filepath.ToSlash(filepath.Clean(filepath.Join(srcdir, filepath.FromSlash(relPath))))
+	}
+	return WithModulesFS(t, os.DirFS(srcdir), modfile, abs)
 }
+
+// AbsPathFunc convert relative path to absolute path.
+// Each path is slash separated.
+type AbsPathFunc func(relPath string) string
 
 // WithModules creates a temp dir which is copied from srcdir and generates vendor directory with go.mod.
 // go.mod can be specified by modfile.
-func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader) (dir string) {
+func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader, abs AbsPathFunc) (dir string) {
 	t.Helper()
 	dir = t.TempDir()
 
@@ -58,35 +65,24 @@ func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader) (dir string) {
 		for _, d := range ds {
 			d := d
 			eg.Go(func() error {
-				var src io.ReadCloser
-				srcPath := filepath.Join(path, d.Name())
-				if d.Name() == "go.mod" {
+				switch {
+				case d.Name() == "go.mod":
 					modRoots = append(modRoots, dstDir)
-					if modfile != nil {
-						src = io.NopCloser(modfile)
+					if err := copyModFile(srcFsys, dstDir, path, modfile, abs); err != nil {
+						return err
 					}
-				}
-
-				if src == nil {
-					src, err = srcFsys.Open(srcPath)
+				default:
+					srcPath := filepath.Join(path, d.Name())
+					src, err := srcFsys.Open(srcPath)
 					if err != nil {
-						return fmt.Errorf("cannot open %s: %w", path, err)
+						return fmt.Errorf("cannot open %s: %w", srcPath, err)
 					}
-				}
-				defer src.Close()
+					defer src.Close()
 
-				dstName := filepath.Join(dstDir, d.Name())
-				dst, err := os.Create(dstName)
-				if err != nil {
-					return fmt.Errorf("cannot create %s: %w", dstName, err)
-				}
-
-				if _, err := io.Copy(dst, src); err != nil {
-					return fmt.Errorf("copy %s to %s: %w", srcPath, dstName, err)
-				}
-
-				if err := dst.Close(); err != nil {
-					return fmt.Errorf("cannot close %s: %w", dstName, err)
+					dstName := filepath.Join(dstDir, d.Name())
+					if err := copyFile(dstName, src); err != nil {
+						return err
+					}
 				}
 
 				return nil
@@ -109,6 +105,71 @@ func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader) (dir string) {
 	}
 
 	return dir
+}
+
+func copyModFile(srcFsys fs.FS, dstDir, srcDir string, modfileReader io.Reader, abs AbsPathFunc) error {
+	srcName := filepath.Join(srcDir, "go.mod")
+
+	if modfileReader == nil {
+		f, err := srcFsys.Open(srcName)
+		if err != nil {
+			return fmt.Errorf("cannot open %s: %w", srcName, err)
+		}
+		defer f.Close()
+		modfileReader = f
+	}
+
+	moddata, err := io.ReadAll(modfileReader)
+	if err != nil {
+		return fmt.Errorf("cannot read go.mod in %s: %w", srcDir, err)
+	}
+
+	file, err := modfile.Parse(srcName, moddata, nil)
+	if err != nil {
+		return fmt.Errorf("cannot parse go.mod in %s: %w", srcDir, err)
+	}
+
+	// fix relative pathes of replace directive to absolute pathes
+	for _, r := range file.Replace {
+		fpath := filepath.FromSlash(r.New.Path)
+		if filepath.IsAbs(r.New.Path) {
+			continue
+		}
+
+		err := file.AddReplace(r.Old.Path, r.Old.Version, abs(fpath), r.New.Version)
+		if err != nil {
+			return fmt.Errorf("cannot add replace directive: %w", err)
+		}
+	}
+
+	newMod, err := file.Format()
+	if err != nil {
+		return fmt.Errorf("cannot format go.mod: %w", err)
+	}
+
+	dstName := filepath.Join(dstDir, "go.mod")
+	if err := copyFile(dstName, bytes.NewReader(newMod)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func copyFile(dstName string, src io.Reader) error {
+	dst, err := os.Create(dstName)
+	if err != nil {
+		return fmt.Errorf("cannot create %s: %w", dstName, err)
+	}
+
+	if _, err := io.Copy(dst, src); err != nil {
+		return fmt.Errorf("copy file to %s: %w", dstName, err)
+	}
+
+	if err := dst.Close(); err != nil {
+		return fmt.Errorf("cannot close %s: %w", dstName, err)
+	}
+
+	return nil
 }
 
 // ModFile opens a mod file with the path and fixes versions by the version fixer.

@@ -1,0 +1,24 @@
+-- a.go --
+package a
+
+import "example.com/replaced"
+
+func F() {
+	var _ replaced.T
+}
+-- go.mod --
+module vendoring.example.com/a
+
+go 1.19
+
+require example.com/replaced v0.1.0
+
+replace example.com/replaced v0.1.0 => /Users/tenntenn/repos/gostaticanalysis/testutil/testdata/TestWithModulesFS/_replaced_module
+-- vendor/example.com/replaced/a.go --
+package replaced
+
+type T struct{}
+-- vendor/modules.txt --
+# example.com/replaced v0.1.0 => /Users/tenntenn/repos/gostaticanalysis/testutil/testdata/TestWithModulesFS/_replaced_module
+## explicit; go 1.19
+example.com/replaced

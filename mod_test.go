@@ -28,12 +28,17 @@ func TestWithModulesFS(t *testing.T) {
 	cases := map[string]struct {
 		replaceModfile bool
 	}{
-		"normal":         {false},
-		"vendoring":      {false},
-		"replacemodfile": {true},
+		"normal":           {false},
+		"vendoring":        {false},
+		"replacemodfile":   {true},
+		"replacedirective": {false},
 	}
 
-	testdata := filepath.Join("testdata", t.Name())
+	testdata, err := filepath.Abs("testdata")
+	if err != nil {
+		t.Fatal("cannot get absolute path of testdata", err)
+	}
+	testdata = filepath.Join(testdata, t.Name())
 
 	for name, tt := range cases {
 		name, tt := name, tt
@@ -42,7 +47,8 @@ func TestWithModulesFS(t *testing.T) {
 
 			var mt MockTestingT
 			mt.TempDirFunc = t.TempDir
-			src := golden.Txtar(t, filepath.Join(testdata, name))
+			srcdir := filepath.Join(testdata, name)
+			src := golden.Txtar(t, srcdir)
 			srcFsys := txtarfs.As(txtar.Parse([]byte(src)))
 
 			var modfile io.Reader
@@ -54,7 +60,11 @@ func TestWithModulesFS(t *testing.T) {
 				modfile = bytes.NewReader(mf)
 			}
 
-			gotDir := testutil.WithModulesFS(&mt, srcFsys, modfile)
+			abs := func(relPath string) string {
+				return filepath.Clean(filepath.Join(srcdir, filepath.FromSlash(relPath)))
+			}
+
+			gotDir := testutil.WithModulesFS(&mt, srcFsys, modfile, abs)
 			if msg := mt.FatalMsg(); msg != "" {
 				t.Fatal("unexpected fatal:", msg)
 			}
