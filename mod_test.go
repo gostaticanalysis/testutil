@@ -70,7 +70,7 @@ func TestWithModulesFS(t *testing.T) {
 				t.Fatal("unexpected fatal:", msg)
 			}
 			got := golden.Txtar(t, gotDir)
-
+			// Remove local path and convert to constant path
 			got = strings.ReplaceAll(got, filepath.ToSlash(testdata), "/path/to/testdata")
 
 			if flagUpdate {
