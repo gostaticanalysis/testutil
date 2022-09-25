@@ -3,73 +3,98 @@ package testutil
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
 	"testing"
 
-	"github.com/otiai10/copy"
 	"github.com/tenntenn/modver"
 	tnntransform "github.com/tenntenn/text/transform"
 	"golang.org/x/mod/modfile"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/text/transform"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
 // WithModules creates a temp dir which is copied from srcdir and generates vendor directory with go.mod.
-// go.mod can be specified by modfileReader.
+// go.mod can be specified by modfile.
 // Example:
 //	func TestAnalyzer(t *testing.T) {
 //		testdata := testutil.WithModules(t, analysistest.TestData(), nil)
 //		analysistest.Run(t, testdata, sample.Analyzer, "a")
 //	}
 func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
+	return WithModulesFS(t, os.DirFS(srcdir), modfile)
+}
+
+// WithModules creates a temp dir which is copied from srcdir and generates vendor directory with go.mod.
+// go.mod can be specified by modfile.
+func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader) (dir string) {
 	t.Helper()
 	dir = t.TempDir()
-	if err := copy.Copy(srcdir, dir); err != nil {
-		t.Fatal("cannot copy a directory:", err)
-	}
 
-	var ok bool
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	var modRoots []string
+	err := fs.WalkDir(srcFsys, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if !info.IsDir() {
+		if !d.IsDir() {
 			return nil
 		}
 
-		files, err := ioutil.ReadDir(path)
+		ds, err := fs.ReadDir(srcFsys, path)
 		if err != nil {
 			return err
 		}
 
-		for _, file := range files {
-			if file.Name() == "go.mod" {
-				if modfile != nil {
-					fn := filepath.Join(path, "go.mod")
-					f, err := os.Create(fn)
-					if err != nil {
-						t.Fatal("cannot create go.mod:", err)
-					}
-
-					if _, err := io.Copy(f, modfile); err != nil {
-						t.Fatal("cannot create go.mod:", err)
-					}
-
-					if err := f.Close(); err != nil {
-						t.Fatal("cannot close go.mod", err)
+		var eg errgroup.Group
+		dstDir := filepath.Join(dir, filepath.FromSlash(path))
+		for _, d := range ds {
+			d := d
+			eg.Go(func() error {
+				var src io.ReadCloser
+				srcPath := filepath.Join(path, d.Name())
+				if d.Name() == "go.mod" {
+					modRoots = append(modRoots, dstDir)
+					if modfile != nil {
+						src = io.NopCloser(modfile)
 					}
 				}
-				execCmd(t, path, "go", "mod", "vendor")
-				ok = true
+
+				if src == nil {
+					src, err = srcFsys.Open(srcPath)
+					if err != nil {
+						return fmt.Errorf("cannot open %s: %w", path, err)
+					}
+				}
+				defer src.Close()
+
+				dstName := filepath.Join(dstDir, d.Name())
+				dst, err := os.Create(dstName)
+				if err != nil {
+					return fmt.Errorf("cannot create %s: %w", dstName, err)
+				}
+
+				if _, err := io.Copy(dst, src); err != nil {
+					return fmt.Errorf("copy %s to %s: %w", srcPath, dstName, err)
+				}
+
+				if err := dst.Close(); err != nil {
+					return fmt.Errorf("cannot close %s: %w", dstName, err)
+				}
+
 				return nil
-			}
+			})
+		}
+
+		if err := eg.Wait(); err != nil {
+			t.Fatal("unexpected error:", err)
 		}
 
 		return nil
@@ -78,8 +103,9 @@ func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
 		t.Fatal("go mod vendor:", err)
 	}
 
-	if !ok {
-		t.Fatal("does not find go.mod")
+	for _, dir := range modRoots {
+		execCmd(t, dir, "go", "mod", "tidy")
+		execCmd(t, dir, "go", "mod", "vendor")
 	}
 
 	return dir
@@ -98,7 +124,7 @@ func ModFile(t *testing.T, path string, fix modfile.VersionFixer) io.Reader {
 		path = filepath.Join(path, "go.mod")
 	}
 
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal("cannot read go.mod:", err)
 	}
@@ -201,7 +227,7 @@ func RunWithVersions(t *testing.T, dir string, a *analysis.Analyzer, vers []Modu
 	return results
 }
 
-func execCmd(t *testing.T, dir, cmd string, args ...string) io.Reader {
+func execCmd(t TestingT, dir, cmd string, args ...string) io.Reader {
 	t.Helper()
 	var stdout, stderr bytes.Buffer
 	_cmd := exec.Command(cmd, args...)

@@ -1,0 +1,8 @@
+-- a.go --
+package a
+
+func F() {}
+-- go.mod --
+module normal.example.com/a
+
+go 1.19
