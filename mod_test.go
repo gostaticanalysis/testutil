@@ -61,7 +61,7 @@ func TestWithModulesFS(t *testing.T) {
 			}
 
 			abs := func(relPath string) string {
-				return filepath.Clean(filepath.Join(srcdir, filepath.FromSlash(relPath)))
+				return filepath.ToSlash(filepath.Clean(filepath.Join(srcdir, filepath.FromSlash(relPath))))
 			}
 
 			gotDir := testutil.WithModulesFS(&mt, srcFsys, modfile, abs)
