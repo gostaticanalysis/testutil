@@ -8,7 +8,9 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -46,7 +48,7 @@ func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader, abs AbsPathFunc
 	dir = t.TempDir()
 
 	var modRoots []string
-	err := fs.WalkDir(srcFsys, ".", func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(srcFsys, ".", func(_path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -55,24 +57,45 @@ func WithModulesFS(t TestingT, srcFsys fs.FS, modfile io.Reader, abs AbsPathFunc
 			return nil
 		}
 
-		ds, err := fs.ReadDir(srcFsys, path)
+		ds, err := fs.ReadDir(srcFsys, _path)
 		if err != nil {
 			return err
 		}
 
 		var eg errgroup.Group
-		dstDir := filepath.Join(dir, filepath.FromSlash(path))
+		dstDir := filepath.Join(dir, filepath.FromSlash(_path))
 		for _, d := range ds {
 			d := d
 			eg.Go(func() error {
 				switch {
+				case path.Ext(d.Name()) == ".go":
+					srcPath := path.Join(_path, d.Name())
+					src, err := srcFsys.Open(srcPath)
+					if err != nil {
+						return fmt.Errorf("cannot open %s: %w", srcPath, err)
+					}
+					defer src.Close()
+
+					linePath, err := filepath.Rel(filepath.FromSlash(abs(".")), filepath.FromSlash(abs(srcPath)))
+					if err != nil {
+						return fmt.Errorf("cannot get relative path of %q: %w", srcPath, err)
+					}
+
+					withLine := io.MultiReader(
+						strings.NewReader(fmt.Sprintf("//line %s:1\n", linePath)),
+						src,
+					)
+					dstName := filepath.Join(dstDir, d.Name())
+					if err := copyFile(dstName, withLine); err != nil {
+						return err
+					}
 				case d.Name() == "go.mod":
 					modRoots = append(modRoots, dstDir)
-					if err := copyModFile(srcFsys, dstDir, path, modfile, abs); err != nil {
+					if err := copyModFile(srcFsys, dstDir, _path, modfile, abs); err != nil {
 						return err
 					}
 				default:
-					srcPath := filepath.Join(path, d.Name())
+					srcPath := path.Join(_path, d.Name())
 					src, err := srcFsys.Open(srcPath)
 					if err != nil {
 						return fmt.Errorf("cannot open %s: %w", srcPath, err)

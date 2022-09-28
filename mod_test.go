@@ -2,9 +2,11 @@ package testutil_test
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -28,11 +30,13 @@ func TestWithModulesFS(t *testing.T) {
 
 	cases := map[string]struct {
 		replaceModfile bool
+		afterCommand   string
 	}{
-		"normal":           {false},
-		"vendoring":        {false},
-		"replacemodfile":   {true},
-		"replacedirective": {false},
+		"normal":           {false, ""},
+		"vendoring":        {false, ""},
+		"replacemodfile":   {true, ""},
+		"replacedirective": {false, ""},
+		"linecomment":      {false, "go test"},
 	}
 
 	testdata, err := filepath.Abs("testdata")
@@ -73,14 +77,42 @@ func TestWithModulesFS(t *testing.T) {
 			// Remove local path and convert to constant path
 			got = strings.ReplaceAll(got, filepath.ToSlash(testdata), "/path/to/testdata")
 
+			gotCmd := execCmd(t, gotDir, tt.afterCommand)
+
 			if flagUpdate {
 				golden.Update(t, testdata, name, got)
+				golden.Update(t, testdata, name+"_after", gotCmd)
 				return
 			}
 
 			if diff := golden.Diff(t, testdata, name, got); diff != "" {
 				t.Error(diff)
 			}
+
+			if diff := golden.Diff(t, testdata, name+"_after", gotCmd); diff != "" {
+				t.Error(diff)
+			}
+
 		})
 	}
+}
+
+func execCmd(t *testing.T, dir, cmd string) string {
+	t.Helper()
+	if cmd == "" {
+		return ""
+	}
+
+	args := strings.Split(cmd, " ")
+	var buf bytes.Buffer
+	_cmd := exec.Command(args[0], args[1:]...)
+	_cmd.Stdout = &buf
+	_cmd.Stderr = &buf
+	_cmd.Dir = dir
+	var eerr *exec.Error
+	err := _cmd.Run()
+	if errors.As(err, &eerr) {
+		t.Fatal(eerr)
+	}
+	return buf.String()
 }

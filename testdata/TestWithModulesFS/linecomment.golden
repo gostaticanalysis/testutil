@@ -1,0 +1,10 @@
+-- a.go --
+package a
+
+func F() {}
+
+This is error
+-- go.mod --
+module linecomment.example.com/a
+
+go 1.19

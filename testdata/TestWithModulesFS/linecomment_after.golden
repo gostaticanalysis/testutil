@@ -1,0 +1,2 @@
+# linecomment.example.com/a
+./a.go:5:1: syntax error: non-declaration statement outside function body
