@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"sync"
 	"testing"
 
@@ -56,8 +55,11 @@ func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
 			// Prepend line directive to .go files
 			if filepath.Ext(file.Name()) == ".go" {
 				fn := filepath.Join(path, file.Name())
-				originalFn := strings.TrimPrefix(fn, dir)
-				if err := prependToFile(fn, fmt.Sprintf("//line %s:1\n", originalFn)); err != nil {
+				rel, err := filepath.Rel(dir, fn)
+				if err != nil {
+					t.Fatal("cannot get relative path:", err)
+				}
+				if err := prependToFile(fn, fmt.Sprintf("//line %s:1\n", rel)); err != nil {
 					t.Fatal("cannot prepend.")
 				}
 			}
