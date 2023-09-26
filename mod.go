@@ -60,7 +60,7 @@ func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
 					t.Fatal("cannot get relative path:", err)
 				}
 				if err := prependToFile(fn, fmt.Sprintf("//line %s:1\n", rel)); err != nil {
-					t.Fatal("cannot prepend.")
+					t.Fatal("cannot prepend line directive:", err)
 				}
 			}
 			if file.Name() == "go.mod" {
