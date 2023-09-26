@@ -24,7 +24,6 @@ import (
 // WithModules creates a temp dir which is copied from srcdir and generates vendor directory with go.mod.
 // go.mod can be specified by modfileReader.
 // Example:
-//
 //	func TestAnalyzer(t *testing.T) {
 //		testdata := testutil.WithModules(t, analysistest.TestData(), nil)
 //		analysistest.Run(t, testdata, sample.Analyzer, "a")
@@ -98,45 +97,24 @@ func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
 	return dir
 }
 
-func appendFileContent(tmp io.Writer, filename string) error {
-	f, err := os.OpenFile(filename, os.O_RDONLY, 0600)
+func prependToFile(filename string, ld string) error {
+	f, err := os.OpenFile(filename, os.O_RDWR, 0)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	if _, err := io.Copy(tmp, f); err != nil {
-		return err
-	}
-	return nil
-}
 
-func prependToFile(filename string, content string) error {
-	// Create temp file
-	tmp, err := os.CreateTemp("", "prepend")
+	b, err := io.ReadAll(f)
 	if err != nil {
 		return err
 	}
-	tmpFilePath := tmp.Name()
-	// Prepend line directive
-	if _, err := tmp.Write([]byte(content)); err != nil {
-		tmp.Close()
-		os.Remove(tmpFilePath)
+	if _, err := f.Seek(0, 0); err != nil {
 		return err
 	}
-	// Write the original file content
-	if err := appendFileContent(tmp, filename); err != nil {
-		tmp.Close()
-		os.Remove(tmpFilePath)
+	if _, err := f.WriteString(ld + "\n"); err != nil {
 		return err
 	}
-	// Close tmp file
-	if err = tmp.Close(); err != nil {
-		os.Remove(tmpFilePath)
-		return err
-	}
-	// Rename the temp file
-	if err = os.Rename(tmpFilePath, filename); err != nil {
-		os.Remove(tmpFilePath)
+	if _, err := f.Write(b); err != nil {
 		return err
 	}
 	return nil
@@ -191,7 +169,6 @@ func AllVersion(t *testing.T, module string) []ModuleVersion {
 // The constraints rule uses github.com/hashicorp/go-version.
 //
 // Example:
-//
 //	func TestAnalyzer(t *testing.T) {
 //		vers := FilterVersion(t, "github.com/tenntenn/greeting/v2", ">= v2.0.0")
 //		RunWithVersions(t, analysistest.TestData(), sample.Analyzer, vers, "a")
@@ -208,7 +185,6 @@ func FilterVersion(t *testing.T, module, constraints string) []ModuleVersion {
 // LatestVersion returns most latest versions (<= max) of each minner version.
 //
 // Example:
-//
 //	func TestAnalyzer(t *testing.T) {
 //		vers := LatestVersion(t, "github.com/tenntenn/greeting/v2", 3)
 //		RunWithVersions(t, analysistest.TestData(), sample.Analyzer, vers, "a")
@@ -225,7 +201,6 @@ func LatestVersion(t *testing.T, module string, max int) []ModuleVersion {
 // RunWithVersions runs analysistest.Run with modules which version is specified the vers.
 //
 // Example:
-//
 //	func TestAnalyzer(t *testing.T) {
 //		vers := AllVersion(t, "github.com/tenntenn/greeting/v2")
 //		RunWithVersions(t, analysistest.TestData(), sample.Analyzer, vers, "a")
