@@ -54,7 +54,7 @@ func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
 
 		for _, file := range files {
 			// Prepend line directive to .go files
-			if strings.HasSuffix(file.Name(), ".go") {
+			if filepath.Ext(file.Name()) == ".go" {
 				fn := filepath.Join(path, file.Name())
 				originalFn := strings.TrimPrefix(fn, dir)
 				if err := prependToFile(fn, fmt.Sprintf("//line %s:1\n", originalFn)); err != nil {
