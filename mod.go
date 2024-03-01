@@ -3,6 +3,7 @@ package testutil
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -50,6 +51,17 @@ func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
 		}
 
 		for _, file := range files {
+			// Prepend line directive to .go files
+			if filepath.Ext(file.Name()) == ".go" {
+				fn := filepath.Join(path, file.Name())
+				rel, err := filepath.Rel(dir, fn)
+				if err != nil {
+					t.Fatal("cannot get relative path:", err)
+				}
+				if err := prependToFile(fn, fmt.Sprintf("//line %s:1\n", rel)); err != nil {
+					t.Fatal("cannot prepend line directive:", err)
+				}
+			}
 			if file.Name() == "go.mod" {
 				if modfile != nil {
 					fn := filepath.Join(path, "go.mod")
@@ -83,6 +95,29 @@ func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
 	}
 
 	return dir
+}
+
+func prependToFile(filename string, ld string) error {
+	f, err := os.OpenFile(filename, os.O_RDWR, 0)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return err
+	}
+	if _, err := f.Seek(0, 0); err != nil {
+		return err
+	}
+	if _, err := f.WriteString(ld + "\n"); err != nil {
+		return err
+	}
+	if _, err := f.Write(b); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ModFile opens a mod file with the path and fixes versions by the version fixer.
