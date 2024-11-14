@@ -24,6 +24,7 @@ import (
 // WithModules creates a temp dir which is copied from srcdir and generates vendor directory with go.mod.
 // go.mod can be specified by modfileReader.
 // Example:
+//
 //	func TestAnalyzer(t *testing.T) {
 //		testdata := testutil.WithModules(t, analysistest.TestData(), nil)
 //		analysistest.Run(t, testdata, sample.Analyzer, "a")
@@ -169,6 +170,7 @@ func AllVersion(t *testing.T, module string) []ModuleVersion {
 // The constraints rule uses github.com/hashicorp/go-version.
 //
 // Example:
+//
 //	func TestAnalyzer(t *testing.T) {
 //		vers := FilterVersion(t, "github.com/tenntenn/greeting/v2", ">= v2.0.0")
 //		RunWithVersions(t, analysistest.TestData(), sample.Analyzer, vers, "a")
@@ -185,6 +187,7 @@ func FilterVersion(t *testing.T, module, constraints string) []ModuleVersion {
 // LatestVersion returns most latest versions (<= max) of each minner version.
 //
 // Example:
+//
 //	func TestAnalyzer(t *testing.T) {
 //		vers := LatestVersion(t, "github.com/tenntenn/greeting/v2", 3)
 //		RunWithVersions(t, analysistest.TestData(), sample.Analyzer, vers, "a")
@@ -201,6 +204,7 @@ func LatestVersion(t *testing.T, module string, max int) []ModuleVersion {
 // RunWithVersions runs analysistest.Run with modules which version is specified the vers.
 //
 // Example:
+//
 //	func TestAnalyzer(t *testing.T) {
 //		vers := AllVersion(t, "github.com/tenntenn/greeting/v2")
 //		RunWithVersions(t, analysistest.TestData(), sample.Analyzer, vers, "a")
