@@ -30,7 +30,7 @@ import (
 //		testdata := testutil.WithModules(t, analysistest.TestData(), nil)
 //		analysistest.Run(t, testdata, sample.Analyzer, "a")
 //	}
-func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
+func WithModules(t *testing.T, srcdir string, gomodfile io.Reader) (dir string) {
 	t.Helper()
 	dir = t.TempDir()
 	if err := copy.Copy(srcdir, dir); err != nil {
@@ -65,14 +65,14 @@ func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
 				}
 			}
 			if file.Name() == "go.mod" {
-				if modfile != nil {
+				if gomodfile != nil {
 					fn := filepath.Join(path, "go.mod")
 					f, err := os.Create(fn)
 					if err != nil {
 						t.Fatal("cannot create go.mod:", err)
 					}
 
-					if _, err := io.Copy(f, modfile); err != nil {
+					if _, err := io.Copy(f, gomodfile); err != nil {
 						t.Fatal("cannot create go.mod:", err)
 					}
 
@@ -94,7 +94,56 @@ func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
 	}
 
 	if !ok {
-		t.Fatal("does not find go.mod")
+		if gomodfile == nil {
+			t.Fatal("does not find go.mod")
+		}
+
+		src := filepath.Join(dir, "src")
+		entries, err := os.ReadDir(src)
+		if err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+
+		data, err := io.ReadAll(gomodfile)
+		if err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
+			pkgdir := filepath.Join(src, entry.Name())
+			fn := filepath.Join(pkgdir, "go.mod")
+			f, err := os.Create(fn)
+			if err != nil {
+				t.Fatal("cannot create go.mod:", err)
+			}
+
+			gomod, err := modfile.Parse(fn, data, nil)
+			if err != nil {
+				t.Fatal("unexpected error:", err)
+			}
+
+			gomod.AddModuleStmt(entry.Name())
+			gomod.Cleanup()
+
+			out, err := gomod.Format()
+			if err != nil {
+				t.Fatal("cannot format go.mod:", err)
+			}
+
+			if _, err := io.Copy(f, bytes.NewReader(out)); err != nil {
+				t.Fatal("cannot create go.mod:", err)
+			}
+
+			if err := f.Close(); err != nil {
+				t.Fatal("cannot close go.mod", err)
+			}
+
+			execCmd(t, pkgdir, "go", "mod", "tidy")
+			execCmd(t, pkgdir, "go", "mod", "vendor")
+		}
 	}
 
 	return dir
