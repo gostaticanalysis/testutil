@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -79,6 +80,7 @@ func WithModules(t *testing.T, srcdir string, modfile io.Reader) (dir string) {
 						t.Fatal("cannot close go.mod", err)
 					}
 				}
+				execCmd(t, path, "go", "mod", "tidy")
 				execCmd(t, path, "go", "mod", "vendor")
 				ok = true
 				return nil
@@ -126,20 +128,22 @@ func prependToFile(filename string, ld string) error {
 func ModFile(t *testing.T, path string, fix modfile.VersionFixer) io.Reader {
 	t.Helper()
 
+	gomod := path
+
 	info, err := os.Stat(path)
 	if err != nil {
 		t.Fatal("cannot get stat of path:", err)
 	}
 	if info.IsDir() {
-		path = filepath.Join(path, "go.mod")
+		gomod = modfilePath(t, path)
 	}
 
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(gomod)
 	if err != nil {
 		t.Fatal("cannot read go.mod:", err)
 	}
 
-	f, err := modfile.Parse(path, data, fix)
+	f, err := modfile.Parse(gomod, data, fix)
 	if err != nil {
 		t.Fatal("cannot parse go.mod:", err)
 	}
@@ -150,6 +154,25 @@ func ModFile(t *testing.T, path string, fix modfile.VersionFixer) io.Reader {
 	}
 
 	return bytes.NewReader(out)
+}
+
+func modfilePath(t *testing.T, dir string) string {
+	t.Helper()
+
+	var stdout bytes.Buffer
+	cmd := exec.Command("go", "list", "-m", "-f", "{{.GoMod}}")
+	cmd.Dir = dir
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("cannot get the parent module with %s: %v", dir, err)
+	}
+
+	gomod := strings.TrimSpace(stdout.String())
+	if gomod == "" {
+		t.Fatalf("cannot find go.mod, %s may not managed with Go Modules", dir)
+	}
+
+	return gomod
 }
 
 // ModuleVersion has module path and its version.
