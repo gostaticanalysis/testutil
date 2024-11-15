@@ -3,6 +3,7 @@ package testutil
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -29,61 +30,136 @@ import (
 //		testdata := testutil.WithModules(t, analysistest.TestData(), nil)
 //		analysistest.Run(t, testdata, sample.Analyzer, "a")
 //	}
-func WithModules(t *testing.T, srcdir string, gomodfile io.Reader) (dir string) {
+func WithModules(t *testing.T, testdata string, gomodfile io.Reader) (dir string) {
 	t.Helper()
 	dir = t.TempDir()
-	if err := copy.Copy(srcdir, dir); err != nil {
+	if err := copy.Copy(testdata, dir); err != nil {
 		t.Fatal("cannot copy a directory:", err)
 	}
 
 	src := filepath.Join(dir, "src")
+
+	var data []byte
+	if gomodfile != nil {
+		_data, err := io.ReadAll(gomodfile)
+		if err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+		data = _data
+	}
+
+	replaceGoMod(t, src, data)
+	addLineComment(t, src)
+
+	return dir
+}
+
+func replaceGoMod(t *testing.T, src string, gomodfile []byte) {
+	t.Helper()
+
 	var ok bool
 	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if !info.IsDir() {
+		if info.IsDir() || info.Name() != "go.mod" {
 			return nil
 		}
 
-		files, err := os.ReadDir(path)
+		if gomodfile != nil {
+			if err := os.WriteFile(path, gomodfile, 0o644); err != nil {
+				t.Fatal("cannot write go.mod:", err)
+			}
+		}
+
+		dir := filepath.Dir(path)
+		execCmd(t, dir, "go", "mod", "tidy")
+		execCmd(t, dir, "go", "mod", "vendor")
+		ok = true
+
+		return nil
+	})
+	if err != nil {
+		t.Fatal("go mod vendor:", err)
+	}
+
+	if ok {
+		return
+	}
+
+	if gomodfile == nil {
+		t.Fatal("does not find go.mod")
+	}
+
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		pkgdir := filepath.Join(src, entry.Name())
+		fn := filepath.Join(pkgdir, "go.mod")
+		gomod, err := modfile.Parse(fn, gomodfile, nil)
+		if err != nil {
+			t.Fatal("unexpected error:", err)
+		}
+
+		gomod.AddModuleStmt(entry.Name())
+		gomod.Cleanup()
+
+		out, err := gomod.Format()
+		if err != nil {
+			t.Fatal("cannot format go.mod:", err)
+		}
+
+		if err := os.WriteFile(fn, out, 0o644); err != nil {
+			t.Fatal("cannot write go.mod:", err)
+		}
+
+		execCmd(t, pkgdir, "go", "mod", "tidy")
+		execCmd(t, pkgdir, "go", "mod", "vendor")
+	}
+}
+
+func addLineComment(t *testing.T, src string) {
+	t.Helper()
+
+	moddirs := make(map[string]string)
+	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		for _, file := range files {
-			// Prepend line directive to .go files
-			if filepath.Ext(file.Name()) == ".go" {
-				fn := filepath.Join(path, file.Name())
-				rel, err := filepath.Rel(src, fn)
-				if err != nil {
-					t.Fatal("cannot get relative path:", err)
+		if info.IsDir() {
+			return nil
+		}
+
+		// Prepend line directive to .go files
+		if filepath.Ext(info.Name()) == ".go" {
+			dir := filepath.Dir(path)
+			moddir, ok := moddirs[dir]
+			if !ok {
+				r := execCmd(t, dir, "go", "list", "-m", "-json")
+				var mod struct {
+					Dir string
 				}
-				if err := prependToFile(fn, fmt.Sprintf("//line %s:1\n", rel)); err != nil {
-					t.Fatal("cannot prepend line directive:", err)
+				if err := json.NewDecoder(r).Decode(&mod); err != nil {
+					t.Fatal("unexpected error:", err)
 				}
+				moddir = mod.Dir
 			}
-			if file.Name() == "go.mod" {
-				if gomodfile != nil {
-					fn := filepath.Join(path, "go.mod")
-					f, err := os.Create(fn)
-					if err != nil {
-						t.Fatal("cannot create go.mod:", err)
-					}
 
-					if _, err := io.Copy(f, gomodfile); err != nil {
-						t.Fatal("cannot create go.mod:", err)
-					}
-
-					if err := f.Close(); err != nil {
-						t.Fatal("cannot close go.mod", err)
-					}
-				}
-				execCmd(t, path, "go", "mod", "tidy")
-				execCmd(t, path, "go", "mod", "vendor")
-				ok = true
-				return nil
+			rel, err := filepath.Rel(moddir, path)
+			if err != nil {
+				t.Fatal("cannot get relative path:", err)
+			}
+			if err := prependToFile(path, fmt.Sprintf("//line %s:1\n", rel)); err != nil {
+				t.Fatal("cannot prepend line directive:", err)
 			}
 		}
 
@@ -92,60 +168,6 @@ func WithModules(t *testing.T, srcdir string, gomodfile io.Reader) (dir string) 
 	if err != nil {
 		t.Fatal("go mod vendor:", err)
 	}
-
-	if !ok {
-		if gomodfile == nil {
-			t.Fatal("does not find go.mod")
-		}
-
-		entries, err := os.ReadDir(src)
-		if err != nil {
-			t.Fatal("unexpected error:", err)
-		}
-
-		data, err := io.ReadAll(gomodfile)
-		if err != nil {
-			t.Fatal("unexpected error:", err)
-		}
-
-		for _, entry := range entries {
-			if !entry.IsDir() {
-				continue
-			}
-			pkgdir := filepath.Join(src, entry.Name())
-			fn := filepath.Join(pkgdir, "go.mod")
-			f, err := os.Create(fn)
-			if err != nil {
-				t.Fatal("cannot create go.mod:", err)
-			}
-
-			gomod, err := modfile.Parse(fn, data, nil)
-			if err != nil {
-				t.Fatal("unexpected error:", err)
-			}
-
-			gomod.AddModuleStmt(entry.Name())
-			gomod.Cleanup()
-
-			out, err := gomod.Format()
-			if err != nil {
-				t.Fatal("cannot format go.mod:", err)
-			}
-
-			if _, err := io.Copy(f, bytes.NewReader(out)); err != nil {
-				t.Fatal("cannot create go.mod:", err)
-			}
-
-			if err := f.Close(); err != nil {
-				t.Fatal("cannot close go.mod", err)
-			}
-
-			execCmd(t, pkgdir, "go", "mod", "tidy")
-			execCmd(t, pkgdir, "go", "mod", "vendor")
-		}
-	}
-
-	return dir
 }
 
 func prependToFile(filename string, ld string) error {
