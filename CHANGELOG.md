@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.5.1](https://github.com/gostaticanalysis/testutil/compare/v0.5.0...v0.5.1) - 2024-11-15
+- Fix line comment by @tenntenn in https://github.com/gostaticanalysis/testutil/pull/14
+
 ## [v0.5.0](https://github.com/gostaticanalysis/testutil/compare/v0.4.0...v0.5.0) - 2024-11-14
 - Prepend line directive to copied source files and add test by @k1LoW in https://github.com/gostaticanalysis/testutil/pull/10
 - Prepend line directive to copied source files by @usatie in https://github.com/gostaticanalysis/testutil/pull/9
