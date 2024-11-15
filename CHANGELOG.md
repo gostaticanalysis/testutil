@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.5.2](https://github.com/gostaticanalysis/testutil/compare/v0.5.1...v0.5.2) - 2024-11-15
+- Fix line comment by @tenntenn in https://github.com/gostaticanalysis/testutil/pull/16
+
 ## [v0.5.1](https://github.com/gostaticanalysis/testutil/compare/v0.5.0...v0.5.1) - 2024-11-15
 - Fix line comment by @tenntenn in https://github.com/gostaticanalysis/testutil/pull/14
 
