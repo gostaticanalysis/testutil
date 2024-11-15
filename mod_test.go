@@ -3,6 +3,7 @@ package testutil
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"golang.org/x/tools/go/analysis/analysistest"
@@ -17,17 +18,23 @@ func TestWithModules(t *testing.T) {
 			path string
 			want string
 		}{
-			{filepath.Join(testdata, "src", "a", "a.go"), "//line src/a/a.go:1"},
-			{filepath.Join(testdata, "src", "a", "b", "b.go"), "//line src/a/b/b.go:1"},
+			{filepath.Join(testdata, "src", "a", "a.go"), "//line a/a.go:1"},
+			{filepath.Join(testdata, "src", "a", "b", "b.go"), "//line a/b/b.go:1"},
 		}
 		for _, tt := range tests {
-			b, err := os.ReadFile(tt.path)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := string(b[:len(tt.want)]); got != tt.want {
-				t.Errorf("got %q, want %q", got, tt.want)
-			}
+			t.Run(tt.path, func(t *testing.T) {
+				t.Parallel()
+
+				src, err := os.ReadFile(tt.path)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				got, _, _ := strings.Cut(string(src), "\n")
+				if got != tt.want {
+					t.Errorf("got %q, want %q", got, tt.want)
+				}
+			})
 		}
 	})
 }
