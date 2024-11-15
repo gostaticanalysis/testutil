@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -37,8 +36,9 @@ func WithModules(t *testing.T, srcdir string, gomodfile io.Reader) (dir string) 
 		t.Fatal("cannot copy a directory:", err)
 	}
 
+	src := filepath.Join(dir, "src")
 	var ok bool
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -47,7 +47,7 @@ func WithModules(t *testing.T, srcdir string, gomodfile io.Reader) (dir string) 
 			return nil
 		}
 
-		files, err := ioutil.ReadDir(path)
+		files, err := os.ReadDir(path)
 		if err != nil {
 			return err
 		}
@@ -56,7 +56,7 @@ func WithModules(t *testing.T, srcdir string, gomodfile io.Reader) (dir string) 
 			// Prepend line directive to .go files
 			if filepath.Ext(file.Name()) == ".go" {
 				fn := filepath.Join(path, file.Name())
-				rel, err := filepath.Rel(dir, fn)
+				rel, err := filepath.Rel(src, fn)
 				if err != nil {
 					t.Fatal("cannot get relative path:", err)
 				}
@@ -98,7 +98,6 @@ func WithModules(t *testing.T, srcdir string, gomodfile io.Reader) (dir string) 
 			t.Fatal("does not find go.mod")
 		}
 
-		src := filepath.Join(dir, "src")
 		entries, err := os.ReadDir(src)
 		if err != nil {
 			t.Fatal("unexpected error:", err)
