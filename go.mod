@@ -15,6 +15,7 @@ require (
 
 require (
 	github.com/hashicorp/go-version v1.7.0 // indirect
+	github.com/newmo-oss/gotestingmock v0.1.1 // indirect
 	golang.org/x/sync v0.9.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
 )
