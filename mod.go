@@ -151,10 +151,20 @@ func addLineComment(t *testing.T, src string) {
 				if err := json.NewDecoder(r).Decode(&mod); err != nil {
 					t.Fatal("unexpected error:", err)
 				}
-				moddir = mod.Dir
+				realModDir, err := filepath.EvalSymlinks(mod.Dir)
+				if err != nil {
+					t.Fatal("failed to eval symlinks for module dir:", err)
+				}
+				moddir = realModDir
+				moddirs[dir] = moddir
 			}
 
-			rel, err := filepath.Rel(moddir, path)
+			realPath, err := filepath.EvalSymlinks(path)
+			if err != nil {
+				t.Fatal("failed to eval symlinks for module dir:", err)
+			}
+
+			rel, err := filepath.Rel(moddir, realPath)
 			if err != nil {
 				t.Fatal("cannot get relative path:", err)
 			}
@@ -337,6 +347,7 @@ func execCmd(t *testing.T, dir, cmd string, args ...string) io.Reader {
 	t.Helper()
 	var stdout, stderr bytes.Buffer
 	_cmd := exec.Command(cmd, args...)
+	_cmd.Env = append(os.Environ(), "GOWORK=off")
 	_cmd.Stdout = &stdout
 	_cmd.Stderr = &stderr
 	_cmd.Dir = dir
