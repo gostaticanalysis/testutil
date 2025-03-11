@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.6.0](https://github.com/gostaticanalysis/testutil/compare/v0.5.2...v0.6.0) - 2025-03-11
+- Update go dependencies workflow by @tenntenn in https://github.com/gostaticanalysis/testutil/pull/21
+- fixed a bug that occurred when go.work was included in external modules by @Arupaka1152 in https://github.com/gostaticanalysis/testutil/pull/20
+- Add WriteFilesTxtar by @tenntenn in https://github.com/gostaticanalysis/testutil/pull/18
+
 ## [v0.5.2](https://github.com/gostaticanalysis/testutil/compare/v0.5.1...v0.5.2) - 2024-11-15
 - Fix line comment by @tenntenn in https://github.com/gostaticanalysis/testutil/pull/16
 
