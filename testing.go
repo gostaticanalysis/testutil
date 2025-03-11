@@ -1,8 +1,7 @@
 package testutil
 
-type TestingT interface {
-	Cleanup(func())
-	Errorf(format string, args ...interface{})
-	Fatalf(format string, args ...interface{})
-	Helper()
-}
+import "testing"
+
+// TestingT is remained for compatibility.
+// Deprecated: use testing.TB
+type TestingT = testing.TB
