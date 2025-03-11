@@ -161,7 +161,7 @@ func addLineComment(t *testing.T, src string) {
 
 			realPath, err := filepath.EvalSymlinks(path)
 			if err != nil {
-				t.Fatal("failed to eval symlinks for module dir:", err)
+				t.Fatal("failed to eval symlinks for module path:", err)
 			}
 
 			rel, err := filepath.Rel(moddir, realPath)
