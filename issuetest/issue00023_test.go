@@ -7,9 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"golang.org/x/tools/go/analysis/analysistest"
-
 	"github.com/tenntenn/golden"
+	"golang.org/x/tools/go/analysis/analysistest"
 
 	"github.com/gostaticanalysis/testutil"
 )
