@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.6.1](https://github.com/gostaticanalysis/testutil/compare/v0.6.0...v0.6.1) - 2025-03-19
+- Fix #23 by @tenntenn in https://github.com/gostaticanalysis/testutil/pull/24
+
 ## [v0.6.0](https://github.com/gostaticanalysis/testutil/compare/v0.5.2...v0.6.0) - 2025-03-11
 - Update go dependencies workflow by @tenntenn in https://github.com/gostaticanalysis/testutil/pull/21
 - fixed a bug that occurred when go.work was included in external modules by @Arupaka1152 in https://github.com/gostaticanalysis/testutil/pull/20
