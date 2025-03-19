@@ -74,6 +74,7 @@ func replaceGoMod(t *testing.T, src string, gomodfile []byte) {
 		}
 
 		dir := filepath.Dir(path)
+		removeToolDirective(t, dir)
 		execCmd(t, dir, "go", "mod", "tidy")
 		execCmd(t, dir, "go", "mod", "vendor")
 		ok = true
@@ -121,6 +122,7 @@ func replaceGoMod(t *testing.T, src string, gomodfile []byte) {
 			t.Fatal("cannot write go.mod:", err)
 		}
 
+		removeToolDirective(t, pkgdir)
 		execCmd(t, pkgdir, "go", "mod", "tidy")
 		execCmd(t, pkgdir, "go", "mod", "vendor")
 	}
@@ -343,8 +345,8 @@ func RunWithVersions(t *testing.T, dir string, a *analysis.Analyzer, vers []Modu
 	return results
 }
 
-func execCmd(t *testing.T, dir, cmd string, args ...string) io.Reader {
-	t.Helper()
+func execCmd(tb testing.TB, dir, cmd string, args ...string) io.Reader {
+	tb.Helper()
 	var stdout, stderr bytes.Buffer
 	_cmd := exec.Command(cmd, args...)
 	_cmd.Env = append(os.Environ(), "GOWORK=off")
@@ -352,7 +354,7 @@ func execCmd(t *testing.T, dir, cmd string, args ...string) io.Reader {
 	_cmd.Stderr = &stderr
 	_cmd.Dir = dir
 	if err := _cmd.Run(); err != nil {
-		t.Fatal(err, "\n", &stderr)
+		tb.Fatal(err, "\n", &stderr)
 	}
 	return &stdout
 }

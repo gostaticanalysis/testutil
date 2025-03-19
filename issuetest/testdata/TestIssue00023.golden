@@ -1,0 +1,12 @@
+-- src/issue00023/go.mod --
+module example.com/issue00023
+
+go 1.24.1
+-- src/issue00023/go.sum --
+-- src/issue00023/issue00023.go --
+//line issue00023.go:1
+
+//go:build go1.24
+
+// see https://github.com/gostaticanalysis/testutil/blob/main/go.mod
+package issue00023

@@ -2,11 +2,14 @@ module github.com/gostaticanalysis/testutil
 
 go 1.23.7
 
+toolchain go1.24.1
+
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/josharian/txtarfs v0.0.0-20240408113805-5dc76b8fe6bf
 	github.com/newmo-oss/gotestingmock v0.1.1
 	github.com/otiai10/copy v1.14.1
+	github.com/tenntenn/golden v0.5.4
 	github.com/tenntenn/modver v1.0.1
 	github.com/tenntenn/text/transform v0.0.0-20200319021203-7eef512accb3
 	golang.org/x/mod v0.24.0
