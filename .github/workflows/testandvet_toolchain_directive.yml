@@ -1,0 +1,62 @@
+---
+name: Test and Vet (toolchain directive version)
+
+env:
+  GOTOOLCHAIN: local
+
+"on":
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  release:
+    types:
+      - published
+      - created
+      - edited
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Parse toolchain directive
+        # see: https://github.com/actions/setup-go/issues/457
+        id: toolchain
+        run: |
+          echo "version=$(sed -ne '/^toolchain /s/^toolchain go//p' go.mod)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Go
+        uses: actions/setup-go@v5.3.0
+        with:
+          go-version: ${{ steps.toolchain.outputs.version }}
+
+      - name: Cache Go module and build cache
+        uses: actions/cache@v4.2.2
+        with:
+          key: go-${{ hashFiles('**/go.sum') }}
+          path: |
+            ~/go/pkg/mod
+          restore-keys: |
+            go-
+
+      - name: Install tennvet
+        run: |
+          GOBIN=$(pwd) go install github.com/tenntenn/tennvet@latest
+
+      - name: Test and vet
+        run: |
+          go version
+          go vet ./...
+          go vet -vettool=$(pwd)/tennvet ./...
+          go test -v -race ./...

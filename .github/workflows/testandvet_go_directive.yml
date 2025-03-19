@@ -1,5 +1,8 @@
 ---
-name: Test and Vet
+name: Test and Vet (go directive version)
+
+env:
+  GOTOOLCHAIN: local
 
 "on":
   push:
@@ -27,16 +30,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4.2.2
 
-      - name: Parse toolchain directive
-        # see: https://github.com/actions/setup-go/issues/457
-        id: toolchain
-        run: |
-          echo "version=$(sed -ne '/^toolchain /s/^toolchain go//p' go.mod)" >> "$GITHUB_OUTPUT"
-
       - name: Install Go
         uses: actions/setup-go@v5.3.0
         with:
-          go-version: ${{ steps.toolchain.outputs.version }}
+          go-version-file: 'go.mod'
 
       - name: Cache Go module and build cache
         uses: actions/cache@v4.2.2
@@ -53,6 +50,7 @@ jobs:
 
       - name: Test and vet
         run: |
+          go version
           go vet ./...
           go vet -vettool=$(pwd)/tennvet ./...
           go test -v -race ./...
